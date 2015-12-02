@@ -81,19 +81,20 @@ object Application extends Controller {
           }
           },
         valid = { mailrequest => 
-          val uuid =  java.util.UUID.randomUUID().toString()
+          val unid =  java.util.UUID.randomUUID().toString()
 
-          QuartzSchedulerExtension(system).createSchedule(uuid, Some("Creating new dynamic schedule"), mailrequest.schedule, None)
+          val reportR = SendReportRequest("subject","body",Seq("to TO <fred@mailer.com>"),"name","?period=2015-11-30T00:00%2F2015-12-06T23:59","0 59 * * * ? 2015")
 
-          val report = system.actorOf(Props(new ScheduledReport(mailrequest.reportName,mailrequest.url,mailrequest.to,mailrequest.body)), name="report-" + uuid)
+          scheduler.createSchedule(unid, Some(s"Creating new dynamic schedule $unid"), mailrequest.schedule, None)
 
-          val jobDt = scheduler.schedule(uuid, report, Create)
+          val report = system.actorOf(Props(new ScheduledReport(reportR.reportName,reportR.url,reportR.to,reportR.body)), name="report-" + unid)
 
+          val jobDt = scheduler.schedule(unid, report, Create)
 
           // val jobDt = QuartzSchedulerExtension(system).schedule("cronEvery30Seconds", receiver, Tick)
   
           // val result = sendReport(mailrequest.subject, mailrequest.body, mailrequest.to, mailrequest.reportName,mailrequest.url)    
-          Ok(Json.obj("Action" -> s"Sending request to email for schedule $uuid on "))
+          Ok(Json.obj("Action" -> s"Sending request to email for schedule "))
       
         }
       )

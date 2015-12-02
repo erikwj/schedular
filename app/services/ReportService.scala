@@ -97,11 +97,11 @@ object ReportService {
       case file:File => log.info(s"receiving file from")
       val msg = EmailService.mailmessage(reportName, receipients, Some(body), Seq(AttachmentFile(file.getName(),file)))
         EmailService.send(msg)//(msg)// ! SendReport(reportName, a.getCanonicalPath(),receipients)
-        context.stop(self)
+        // context.stop(self)
       case _ => log.info("NO FILE RECEIVED")
 		val msg = EmailService.mailmessage("error email", Seq("Miss TO <to@email.com>"), Some("A text message"), Seq[AttachmentFile]())
         EmailService.send(msg)
-        context.stop(self)
+        // context.stop(self)
     }
     
   }
