@@ -5,7 +5,7 @@ version := "0." + new SimpleDateFormat("yyMMddHHmm").format(new Date())
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-name := "akka-quartz-scheduler-scala"
+name := "schedular"
 
 version := "2.4.0"
 
@@ -29,7 +29,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % playVersion,
   "com.typesafe.play" %% "play-ws" % playVersion,
   "com.typesafe.play" %% "play-mailer" % "2.4.1",
-  "org.apache.commons" % "commons-email" % "1.4"
+  "org.apache.commons" % "commons-email" % "1.4",
+  "net.debasishg" %% "redisclient" % "3.0"
 )
 
 
