@@ -29,8 +29,6 @@ object EmailService {
    * @param emailMessage the email message
    */
 
-// "Simple email", "Mister FROM <from@email.com>", Seq("Miss TO <to@email.com>"), Some("A text message"), Some("<html><body><p>An <b>html</b> message</p></body></html>")
-
    def mailmessage(subject:String, to: Seq[String], txt: Option[String], attachments: Seq[AttachmentFile]) = Email(
       "Your requested report from VCS " + subject,
       "LunaBot FROM <reports@lunatech.com>",
@@ -48,15 +46,6 @@ object EmailService {
 
 
   def send(email:Email) = MailerPlugin.send(email)//emailServiceActor ! emailMessage
-  
 
-  /**
-   * public interface to send out emails that dispatch the message to the listening actors
-   * @param emailMessage the email message
-   */
-  // def send(emailMessage: EmailMessage, attachment: Attachment) =  MailerPlugin.send(email)
-  /* {
-    emailServiceActor ! EmailAttachmentMessage(emailMessage, attachment)
-  }*/
 
 }
