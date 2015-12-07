@@ -4,6 +4,6 @@
 
 # Home page
 GET     / 					controllers.Application.index
-#GET     /runningJobs 		controllers.Application.runningJobs
+GET     /runningJobs 		controllers.Application.runningJobs
 GET     /cancelJob/:id 		controllers.Application.cancelScheduledReport(id)
 POST	/scheduleReport			controllers.Application.scheduleReport

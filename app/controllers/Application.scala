@@ -47,11 +47,16 @@ object Application extends Controller {
           //delete jobId -> sr
           BackupService.remove(id)
         
-          Ok(Json.obj("result" -> "job cancelled"))
-        } else Ok(Json.obj("error" -> "job not cancelled","reason" -> "no job found with this id"))
-    } else Ok(Json.obj("error" -> "job not cancelled","reason" -> "not a valid id"))
+          Ok(Json.obj("status" -> "success", "description" -> "job cancelled"))
+        } else Ok(Json.obj("status" -> "error", "description" -> "job not cancelled","reason" -> "no job found with this id: $jobId"))
+    } else Ok(Json.obj("status" -> "error", "description" -> "job not cancelled","reason" -> s"not a valid id: $jobId"))
   }
 
+  def runningJobs = Action {
+    val ids = scheduler.runningJobs.keys
+    println(ids)
+    Ok(Json.obj("status" -> "listing running jobs"))
+  }
   // def resumeScheduler = ???
 
   def scheduleReport = Action(parse.json) { implicit request => 
@@ -61,7 +66,7 @@ object Application extends Controller {
         fieldErrors => {
           val errorMessage = EmailService.mailmessage("Error message", Seq("LunaTech Error report TO <to@email.com>"), Some("There was an error processing a request: $request"), Seq[AttachmentFile]())
           val result = EmailService.send(errorMessage)
-          Ok(Json.obj("Error" -> "No valid request received"))
+          Ok(Json.obj("status" -> "error","description" -> "no valid request received"))
         }
       },
       valid = { sr => 
@@ -74,18 +79,18 @@ object Application extends Controller {
 
         scheduler.createSchedule(id, Some(s"scheduled report $id"), sr.schedule, None)
         val jobDt = scheduler.schedule(id, report, Send)
-
-        Ok(Json.obj("Description" -> s"Scheduled job with $id","id" -> uuid, "nextRun" -> Schedule.dateFormat.format(jobDt), "request" -> request.body))
+        // TimeService.add(jobDt)
+        Ok(Json.obj("status" -> "succes", "description" -> s"scheduled job with id: $id","id" -> uuid, "nextRun" -> Schedule.dateFormat.format(jobDt), "request" -> request.body))
     
       }
     )
   }
 
 
-  def ReportSender(subject: String, body: String, to: Seq[String], reportName:String, url:String) = {
-    val report = Akka.system.actorOf(Props(new ReportSender(reportName,url,to,body)), name="report")
-    report ! Send
-  }
+  // def ReportSender(subject: String, body: String, to: Seq[String], reportName:String, url:String) = {
+  //   val report = Akka.system.actorOf(Props(new ReportSender(reportName,url,to,body)), name="report")
+  //   report ! Send
+  // }
 
 }
 

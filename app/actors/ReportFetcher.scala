@@ -8,6 +8,8 @@ import scala.concurrent.Future
 import com.ning.http.client.AsyncHttpClientConfig.Builder
 import play.api.libs.ws.ning.NingWSClient
 import play.api.libs.json._
+import play.api.Play
+import play.api.Play.current
 
 import akka.actor.ActorSystem
 import akka.actor.Props
@@ -44,8 +46,8 @@ import play.api.libs.mailer._
     def receive: Receive = {
       case CreateReport(name) => {
         log.info(s"received create report")
-            
-        val futureResponse = client.url("http://localhost:9001/report/excel" + bookmarkUrl).getStream()
+        val kateUrl = Play.configuration.getString("kate.url").getOrElse(sys.error("Missing 'kate.url' configuration setting."))
+        val futureResponse = client.url(kateUrl + bookmarkUrl).getStream()
 
         val tempfile = new File(name + ".xlsx")
 
@@ -76,9 +78,8 @@ import play.api.libs.mailer._
     }
 
     private implicit val dispatcher = context.dispatcher
-    private val host = "http://localhost:9001" //ConfigFactory.load().getString("kate.url");
-    private val endpoint = host + "/report/excel" //+ bookmark.url  //play config kate uri
-    // http://localhost:9000/report/excel?period=2015-11-30T00:00%2F2015-12-06T23:59
+    private val host = Play.configuration.getString("kate.url").getOrElse(sys.error("Missing 'kate.url' configuration setting."))
+    private val endpoint = host + "/report/excel" 
     private val client = new NingWSClient(new Builder().build())
   }
 

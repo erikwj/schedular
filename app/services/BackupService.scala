@@ -7,28 +7,32 @@ import play.api.Play
 import play.api.Play.current
 import actors.ReportSender._
 
-object BackupService {
+object BackupService extends RedisService {
   
-  private val redisServer = Play.configuration.getString("redis.url").getOrElse(sys.error("Missing 'redis.url' configuration setting."))
-  private val redisPort = Play.configuration.getInt("redis.port").getOrElse(sys.error("Missing 'redis.port' configuration setting."))
-  private val redis = new RedisClient(redisServer, redisPort)
   private val JOBSKEY = "jobids"
 
   def jobIds = redis.lrange(JOBSKEY,0,-1).getOrElse(List[Option[String]]()).flatten
 
-  def get(id:String) = redis.get(id)
+  def get(id:String):Option[String] = redis.get(id)
    
-  def jobId(id:String) = "jobId-" + id
+  def jobId(id:String):String = "jobId-" + id
 
-  def remove(id: String) = {
+  def remove(id: String):Unit = {
+    //remove the key-value pair
     redis.del(id)
-        redis.lrem(JOBSKEY,0,id)
-    }
+    //remove the id from the list of active jobids
+    redis.lrem(JOBSKEY,0,id)
+  }
 
-  def add(id:String,value:play.api.libs.json.JsValue) = {
-    redis.set(id, value)
-        redis.lpush(JOBSKEY,id)
+  def add(id:String,value:play.api.libs.json.JsValue):Option[Int] = {
+    //add the key value pair
+    val success = redis.set(id, value)
+    //add the id to the list of active jobids
+    if(success) {
+      redis.lpush(JOBSKEY,id) map {_.toInt}
     }
+    else None
+  }
 }
 
 
