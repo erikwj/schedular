@@ -30,7 +30,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-ws" % playVersion,
   "com.typesafe.play" %% "play-mailer" % "2.4.1",
   "org.apache.commons" % "commons-email" % "1.4",
-  "net.debasishg" %% "redisclient" % "3.0"
+  "net.debasishg" %% "redisclient" % "3.0",
+  "org.scalacheck" %% "scalacheck" % "1.12.5" % "test"
 )
 
 

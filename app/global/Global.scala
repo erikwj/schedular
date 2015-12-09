@@ -27,17 +27,20 @@ object Global extends GlobalSettings {
     Logger.info("Load schedule data")
     val keys:List[String] = BackupService.jobIds 
 
-    def load(id:String, sr:ScheduleReportToBeSent) = {
+    def load(id:String, sr:ScheduleReportToBeSent):Unit = {
         val report = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
         scheduler.createSchedule(id, Some(s"scheduled report $id"), sr.schedule, None)
-        scheduler.schedule(id, report, Send)
+        val nextRun = scheduler.schedule(id, report, Send)
+        Logger.info("Loading schedule %s with id: %s scheduled for %s".format(sr.reportName,id, Schedule.dateFormat.format(nextRun)))
     }
     
-    val loadedSchedules:List[(String,java.util.Date)] = for {
+    for {
       id <- keys
       jsonString <- BackupService.get(id) 
       scheduledreport <- Json.parse(jsonString).asOpt[ScheduleReportToBeSent]
-    } yield (id,load(id,scheduledreport))
+      _ <- Option(load(id,scheduledreport))
+    } yield ()
+
 
     Logger.info("Application has started")
   }

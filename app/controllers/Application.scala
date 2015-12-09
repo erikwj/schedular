@@ -54,8 +54,10 @@ object Application extends Controller {
 
   def runningJobs = Action {
     val ids = scheduler.runningJobs.keys
-    println(ids)
-    Ok(Json.obj("status" -> "listing running jobs"))
+            println(BackupService.nextRuns)
+
+    // println(ids)
+    Ok(Json.obj("status" -> "success", "jobIds" -> Json.toJson(ids)))
   }
   // def resumeScheduler = ???
 
@@ -75,18 +77,27 @@ object Application extends Controller {
 
         //save jobId -> sr
         BackupService.add(id, request.body)
+        // BackupService.addScheduledReport(id, sr)
         val report = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
 
         scheduler.createSchedule(id, Some(s"scheduled report $id"), sr.schedule, None)
         val jobDt = scheduler.schedule(id, report, Send)
+        // BackupService.addNextRun(id, jobDt.getTime())
+
         // TimeService.add(jobDt)
-        Ok(Json.obj("status" -> "succes", "description" -> s"scheduled job with id: $id","id" -> uuid, "nextRun" -> Schedule.dateFormat.format(jobDt), "request" -> request.body))
+        Ok(Json.obj("status" -> "succes", "description" -> s"scheduled job with id: $id","id" -> uuid, "nextRun" -> Schedule.dateFormat.format(jobDt)))
     
       }
     )
   }
 
 
+
+    // def load(id:String, sr:ScheduleReportToBeSent):Date = {
+    //     val report = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
+    //     scheduler.createSchedule(id, Some(s"scheduled report $id"), sr.schedule, None)
+    //     scheduler.schedule(id, report, Send)
+    // }
   // def ReportSender(subject: String, body: String, to: Seq[String], reportName:String, url:String) = {
   //   val report = Akka.system.actorOf(Props(new ReportSender(reportName,url,to,body)), name="report")
   //   report ! Send
