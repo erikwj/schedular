@@ -10,6 +10,7 @@ import play.api.Play
 import play.api.Play.current
 import actors.ReportSender._
 import models._
+import java.util.Date
 
 object BackupService extends RedisService {
   
@@ -30,29 +31,34 @@ object BackupService extends RedisService {
     redis.lrem(JOBSKEY,0,id)
   }
 
-  def addScheduledReport(id:String, sr: ScheduleReportToBeSent) = {
-    redis.hmset(id,Map("reportName" -> sr.reportName, "url" -> sr.url, "schedule" -> sr.schedule))
+  def addScheduledReport(id:String, reportName: String, url: String, schedule: String) = {
+    redis.hmset(id,Map("reportName" -> reportName, "url" -> url, "schedule" -> schedule))
   }
   
-  // def addNextRun(id:String, nextRun: Long) = {
-  //   redis.hmset(id,Map("nextRun" -> nextRun))
-  // }
+  def addNextRun(id:String, nextRun: Long) = {
+    val result = redis.hmset(id,Map("nextRun" -> nextRun))
+    println("addNextRun " + id)
+    println(result)
+    result
+  }
+
 
 
 /*
-val dates = sd.sliding(2).toList
-val startDate = new Date()
-val date = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.13")
- dates dropWhile { dd => (date).before(dd(0)) }
-
-
-
+  def nextRuns: List[Date] = {
+    redis.pipeline { p =>
+      jobIds map {
+        id => p.get(id,"nextRun")
+      }
+    }
+  }
 */
-  def nextRuns: List[String] = (jobIds map { id => {
-    val a = redis.get(id,"nextRun")
-    println(a)
-    a
-    }}).flatten
+  def nextRuns(ids:List[String]): List[Date] = (ids map { id => {
+    println("nextRuns " + id)
+    val r = redis.hmget("jobId-" + id,"nextRun").getOrElse(Map[String,String]())
+    println(r)
+    r.get("nextRun") map { s => new Date()}
+  }}).flatten
 
   def scheduled = jobIds map { id => redis.hmget[String,String](id,"reportName", "nextRun")}
 

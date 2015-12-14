@@ -14,6 +14,7 @@ import models._
 import Formatters._
 import ReportSender._
 import services.BackupService
+import services.CronService
 import utils.SchedulerUtil._
 
 object Global extends GlobalSettings {
@@ -29,7 +30,7 @@ object Global extends GlobalSettings {
 
     def load(id:String, sr:ScheduleReportToBeSent):Unit = {
         val report = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
-        scheduler.createSchedule(id, Some(s"scheduled report $id"), sr.schedule, None)
+        scheduler.createSchedule(id, Some(s"scheduled report $id"), CronService.toQuartz(sr.scheme), None)
         val nextRun = scheduler.schedule(id, report, Send)
         Logger.info("Loading schedule %s with id: %s scheduled for %s".format(sr.reportName,id, Schedule.dateFormat.format(nextRun)))
     }

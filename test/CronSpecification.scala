@@ -10,21 +10,6 @@ import services.CronService
 
 object CronServiceSpecification extends Properties("Cron") {
 
-
-  /*
-  scalacheck 
-  //Adds new date to list
-  List(firstdate,seconddate,startdate).sortBy(_.getTime()) == getNextTimeSlot(startDate) :: List(firstdate, seconddate)
-
-  //has no duplicates
-  toSet.size == list.size
-
-  //diff between dates >= minimalTimeDiff
-
-  //returns valid cron
-  And 
-
-  */
   def timeBetween(dates:List[Date]): List[Long] = {
     val sorted = dates.sortBy(_.getTime())
     val windows = (sorted map {_.getTime}).sliding(2).toList

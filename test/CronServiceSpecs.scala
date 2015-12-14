@@ -9,7 +9,8 @@ import play.api.test.Helpers._
 import java.text.SimpleDateFormat
 
 import services.CronService
-import services.CronService._
+import models._
+
 
 /**
  * Add your spec here.
@@ -19,15 +20,16 @@ import services.CronService._
 @RunWith(classOf[JUnitRunner])
 class CronServiceSpec extends Specification {
 
-  val s = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.00")
-  val s2 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.05")
-  val s3 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.039")
-  val d1 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.00")
-  val d2 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.01")
-  val d3 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.02")
-  val d4 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.03")
-  val d5 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.04")
-  val d6 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-07 23:44.15")
+  val s = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-27 23:44.00")
+  val s2 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-27 23:44.05")
+  val s3 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-27 23:44.039")
+  val d1 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-27 23:14.00")
+  val d2 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-27 23:44.01")
+  val d3 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-27 23:44.02")
+  val d4 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-27 23:44.03")
+  val d5 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-27 23:44.04")
+  val d6 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2015-12-27 23:44.15")
+  val d6 = new SimpleDateFormat("yyyy-MM-dd HH:mm.ss").parse("2016-12-27 23:44.15")
 
 
 
@@ -46,10 +48,20 @@ class CronServiceSpec extends Specification {
 
     }
    "be able to generate cronschedule from startdate" in {
-    CronService.toCron(s2,DAILY) must_== "5 44 23 * * * *"
-    CronService.toCron(s2,WEEKLY) must_== "5 44 23 * * 1 *"
-    CronService.toCron(s2,MONTHLY) must_== "5 44 23 11 * * *"
+    CronService.toQuartz(DAILY(s2)) must_== "5 44 23 * * *"
+    CronService.toQuartz(WEEKLY(s2)) must_== "5 44 23 ? * 1"
+    CronService.toQuartz(MONTHLY(s2)) must_== "5 44 23 27 * ?"
+    CronService.toQuartz(YEARLY(s2)) must_== "5 44 23 27 11 ?"
+    CronService.toQuartz(ONCE(s2)) must_== "5 44 23 27 11 115"
    }
+
+   "be able to create a postponed start" in {
+      " A Daily schedule that starts more than 1 day later should be a yearly schedule to start the daily schedule" in {
+        todo
+      }
+   }
+
+
 
   }
 }

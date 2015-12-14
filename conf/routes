@@ -6,4 +6,5 @@
 GET     / 					controllers.Application.index
 GET     /runningJobs 		controllers.Application.runningJobs
 GET     /cancelJob/:id 		controllers.Application.cancelScheduledReport(id)
-POST	/scheduleReport			controllers.Application.scheduleReport
+GET     /cronSchedule 		controllers.Application.cronSchedule
+POST	/scheduleReport		controllers.Application.scheduleReport
