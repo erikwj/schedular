@@ -11,66 +11,30 @@ import play.api.Play.current
 import actors.ReportSender._
 import models._
 import java.util.Date
+import repositories._
 
-object BackupService extends RedisService {
+class BackupService(repo: BackupRepository) {
   
   private val JOBSKEY = "jobids"
 
-  def jobIds:List[String] = redis.lrange(JOBSKEY,0,-1).getOrElse(List[Option[String]]()).flatten
+  def jobIds:List[String] = repo.jobIds//redis.lrange(JOBSKEY,0,-1).getOrElse(List[Option[String]]()).flatten
 
-  def get(id:String):Option[String] = redis.get(id)
+  def get(id:String):Option[String] = repo.get(id)
 
-  def get(id:String,field:String):Option[String] = redis.hget(id,field)
+  def get(id:String,field:String):Option[String] = repo.getField(id,field)
    
-  def jobId(id:String):String = "jobId-" + id
+  def remove(id: JobId):Unit = repo.remove(id)
 
-  def remove(id: String):Unit = {
-    //remove the key-value pair
-    redis.del(id)
-    //remove the id from the list of active jobids
-    redis.lrem(JOBSKEY,0,id)
-  }
+  def addScheduledReport(id:JobId, report: ScheduledReport) = repo.addScheduledReport(id,report)
 
-  def addScheduledReport(id:String, reportName: String, url: String, schedule: String) = {
-    redis.hmset(id,Map("reportName" -> reportName, "url" -> url, "schedule" -> schedule))
-  }
-  
-  def addNextRun(id:String, nextRun: Long) = {
-    val result = redis.hmset(id,Map("nextRun" -> nextRun))
-    println("addNextRun " + id)
-    println(result)
-    result
-  }
+  def addNextRun(id:JobId, nextRun: Long):Boolean = repo.addNextRun(id,nextRun)
 
+  def nextRuns(ids:List[JobId]): List[Date] = repo.nextRuns(ids)
 
+  def scheduled = repo.scheduled 
 
-/*
-  def nextRuns: List[Date] = {
-    redis.pipeline { p =>
-      jobIds map {
-        id => p.get(id,"nextRun")
-      }
-    }
-  }
-*/
-  def nextRuns(ids:List[String]): List[Date] = (ids map { id => {
-    println("nextRuns " + id)
-    val r = redis.hmget("jobId-" + id,"nextRun").getOrElse(Map[String,String]())
-    println(r)
-    r.get("nextRun") map { s => new Date()}
-  }}).flatten
+  def add(id:String,value:play.api.libs.json.JsValue):Option[Int] = repo.add(id,value)
 
-  def scheduled = jobIds map { id => redis.hmget[String,String](id,"reportName", "nextRun")}
-
-  def add(id:String,value:play.api.libs.json.JsValue):Option[Int] = {
-    //add the key value pair
-    val success = redis.set(id, value)
-    //add the id to the list of active jobids
-    if(success) {
-      redis.lpush(JOBSKEY,id) map {_.toInt}
-    }
-    else None
-  }
 }
 
 

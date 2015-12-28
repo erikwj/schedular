@@ -9,7 +9,7 @@ import actors.ReportSender._
 
 trait RedisService {
   
-  val redisServer = Play.configuration.getString("redis.url").getOrElse(sys.error("Missing 'redis.url' configuration setting."))
-  val redisPort = Play.configuration.getInt("redis.port").getOrElse(sys.error("Missing 'redis.port' configuration setting."))
-  val redis = new RedisClient(redisServer, redisPort)
+  // val redisServer = Play.configuration.getString("redis.url").getOrElse(sys.error("Missing 'redis.url' configuration setting."))
+  // val redisPort = Play.configuration.getInt("redis.port").getOrElse(sys.error("Missing 'redis.port' configuration setting."))
+  // val redis = new RedisClient(redisServer, redisPort)
 }

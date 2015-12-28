@@ -8,6 +8,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import models._
 
+import scheduler.QuartzScheduler._
+import CronSchedule._
+
 
 /*
 val msg = EmailService.mailmessage(
@@ -25,15 +28,17 @@ Some("A text message"),
  */      
 
 case class CreateSchedule(scheme: CronSchedule, currentDates: List[Date])
-//sr.reportName,sr.url,sr.to,sr.body
-// case class ScheduledReport(subject: String, body: String, to: Seq[String],reportName:String,  url: String, schedule: String)
+case class ScheduledReport(reportName:String,  url: String, schedule: CronSchedule)
 case class ScheduleReportToBeSent(subject: String, body: String, to: Seq[String],reportName:String,  url: String, scheme: CronSchedule)
 case class ReportSenderNow(subject: String, body: String, to: Seq[String],reportName:String, url: String)
-case class JobId(id: String)
+case class JobId(id: String) {
+	override def toString():String = "jobId-" + id
+}
 
 object Formatters {
 	import CronSchedule._
 	implicit val fmtSRTBS = Json.format[ScheduleReportToBeSent]
+	implicit val fmtSR = Json.format[ScheduledReport]
 	implicit val fmtSRN = Json.format[ReportSenderNow]
 	implicit val fmtCS = Json.format[CreateSchedule]
 	implicit val fmtJI = Json.format[JobId]
@@ -45,6 +50,8 @@ object JobId {
 		case Some(id) => true
 		case _ => false 
 	}
+
+
 }
 
 object Schedule {

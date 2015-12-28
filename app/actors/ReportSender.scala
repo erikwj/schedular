@@ -32,7 +32,6 @@ import play.api.libs.mailer._
 
   object ReportSender {
     case object Send 
-
   }
 
   class ReportSender(reportName: String, target:String,receipients:Seq[String],body: String) extends Actor with ActorLogging {

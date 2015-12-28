@@ -11,14 +11,17 @@ import scala.concurrent.Future
 
 import actors._
 import models._
+import repositories._
 import Formatters._
 import ReportSender._
 import services.BackupService
-import services.CronService
-import utils.SchedulerUtil._
+// import services.CronService
+import scheduler.QuartzScheduler._
 
 object Global extends GlobalSettings {
 
+  val backupRepo = RedisBackupRepository
+  val backupService = new BackupService(backupRepo)
 
   override def onStart(app: Application) {
 
@@ -26,18 +29,18 @@ object Global extends GlobalSettings {
     //Todo
 
     Logger.info("Load schedule data")
-    val keys:List[String] = BackupService.jobIds 
+    val keys:List[String] = backupService.jobIds 
 
     def load(id:String, sr:ScheduleReportToBeSent):Unit = {
         val report = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
-        scheduler.createSchedule(id, Some(s"scheduled report $id"), CronService.toQuartz(sr.scheme), None)
+        scheduler.createSchedule(id, Some(s"scheduled report $id"), CronSchedule.toQuartz(sr.scheme), None)
         val nextRun = scheduler.schedule(id, report, Send)
         Logger.info("Loading schedule %s with id: %s scheduled for %s".format(sr.reportName,id, Schedule.dateFormat.format(nextRun)))
     }
     
     for {
       id <- keys
-      jsonString <- BackupService.get(id) 
+      jsonString <- backupService.get(id) 
       scheduledreport <- Json.parse(jsonString).asOpt[ScheduleReportToBeSent]
       _ <- Option(load(id,scheduledreport))
     } yield ()

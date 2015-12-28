@@ -24,16 +24,20 @@ import java.io.FileOutputStream
 import models._
 import actors._
 import services._
+import repositories._
 import ReportSender._
-import CronSchedule._
 import Formatters._
-import utils.SchedulerUtil._
+import scheduler.QuartzScheduler._
+import CronSchedule._
 
 import play.api.libs.mailer._
 import com.typesafe.akka.extension.quartz.QuartzSchedulerExtension
 
 
 object Application extends Controller {
+
+  val backupRepo = RedisBackupRepository
+  val backupService = new BackupService(backupRepo)
 
   def index = Action {
     Ok("running")
@@ -44,11 +48,11 @@ object Application extends Controller {
 
   def cancelScheduledReport(jobId:String) = Action {
     if(JobId.isValid(jobId)) {
-      val id = BackupService.jobId(jobId)
-      val result = scheduler.cancelJob(id)
+      val id = JobId(jobId)
+      val result = scheduler.cancelJob(id.toString)
         if(result) {
           //delete jobId -> sr
-          BackupService.remove(id)
+          backupService.remove(id)
         
           Ok(Json.obj("status" -> "success", "description" -> "job cancelled"))
         } else Ok(Json.obj("status" -> "error", "description" -> "job not cancelled","reason" -> "no job found with this id: $jobId"))
@@ -69,7 +73,7 @@ object Application extends Controller {
         }
       },
       valid = { cr => 
-        val scheduleOpt = CronService.cron(cr.scheme,cr.currentDates,millis)
+        val scheduleOpt = CronSchedule.nextCron(cr.scheme,cr.currentDates,millis)
         scheduleOpt match {
           case Some(cs) => Ok(Json.obj("status" -> "success", "cron" -> cs))
           case None => Ok(Json.obj("status" -> "error", "reason" -> "Couldn't create cron string"))
@@ -91,33 +95,29 @@ object Application extends Controller {
       },
       valid = { sr => 
         val uuid = java.util.UUID.randomUUID().toString()
-        val id = BackupService.jobId(uuid)
+        val id = JobId(uuid)
 
-        //save jobId -> sr
-        // BackupService.add(id, request.body)
-        val report = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
-        
         // val cd:List[java.util.Date] = List(new java.util.Date(1449528240000L),new java.util.Date(1449528270000L))
-        val currentDates = BackupService.nextRuns(scheduler.runningJobs.keys.toList)// List(new java.util.Date(1449528240000L)) //TODO
+        val currentDates = backupService.nextRuns(scheduler.runningJobs.keys.toList map { JobId(_)})// List(new java.util.Date(1449528240000L)) //TODO
         println("runningJobs nextRuns " + currentDates)
-        // println("CurrentDates " + cd)
         println("Scheme" + sr.scheme)
-        val cronOpt = CronService.cron(sr.scheme,currentDates,millis)
-        val dateOpt = cronOpt map { (cron) => {
-          val cronStr = CronService.toQuartz(cron)
-          scheduler.createSchedule(uuid, Some(s"scheduled report"), cronStr, None)
-          // case class ScheduleReportToBeSent(subject: String, body: String, to: Seq[String],reportName:String,  url: String, scheme: CronSchedule)
 
-          // val srtbs = ScheduleReportToBeSent(sr.subject,sr.body,sr.to,sr.reportName,sr.url,cron)
-          // BackupService.addScheduledReport(id, srtbs)
-          scheduler.schedule(uuid, report, Send)
+        val cronOpt = CronSchedule.nextCron(sr.scheme,currentDates,millis)
+        val dateOpt = cronOpt map { (cron) => {
+          val cronStr = CronSchedule.toQuartz(cron)
+          scheduler.createSchedule(uuid, Some(s"scheduled report"), cronStr, None)
+
+          val scheduledReport = ScheduledReport(sr.reportName,sr.url,cron)
+          backupService.addScheduledReport(id, scheduledReport)
+          val job = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
+          scheduler.schedule(uuid, job, Send)
           } 
         }
         
         dateOpt match {
           case Some(d) => {
-            BackupService.addNextRun(id, d.getTime)
-            Ok(Json.obj("status" -> "succes", "description" -> s"scheduled job with id: $id","id" -> uuid, "nextRun" -> Schedule.dateFormat.format(d)))
+            if(backupService.addNextRun(id, d.getTime)) Ok(Json.obj("status" -> "succes", "description" -> s"scheduled job with id: $id","id" -> uuid, "nextRun" -> Schedule.dateFormat.format(d)))
+            else Ok(Json.obj("status" -> "error", "description" -> s"Backup couldn't be added for scheduled job with id: $id","id" -> uuid))
           }
           case _ => Ok(Json.obj("status" -> "error", "description" -> s"Can't create schedule"))
         }
@@ -127,16 +127,6 @@ object Application extends Controller {
   }
 
 
-
-    // def load(id:String, sr:ScheduleReportToBeSent):Date = {
-    //     val report = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
-    //     scheduler.createSchedule(id, Some(s"scheduled report $id"), sr.schedule, None)
-    //     scheduler.schedule(id, report, Send)
-    // }
-  // def ReportSender(subject: String, body: String, to: Seq[String], reportName:String, url:String) = {
-  //   val report = Akka.system.actorOf(Props(new ReportSender(reportName,url,to,body)), name="report")
-  //   report ! Send
-  // }
 
 }
 
