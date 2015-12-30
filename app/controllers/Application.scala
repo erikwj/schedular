@@ -27,8 +27,9 @@ import services._
 import repositories._
 import ReportSender._
 import Formatters._
-import scheduler.QuartzScheduler._
-import CronSchedule._
+import quartzscheduler._
+import quartzscheduler.QuartzScheduler._
+import quartzscheduler.CronSchedule._
 
 import play.api.libs.mailer._
 import com.typesafe.akka.extension.quartz.QuartzSchedulerExtension
@@ -43,7 +44,7 @@ object Application extends Controller {
     Ok("running")
   }
 
-  val millis = Play.configuration.getInt("cron.timeinterval").getOrElse(sys.error("Missing 'cron.timeinterval' configuration setting."))
+  val jobIntervalInMillis = Play.configuration.getInt("cron.timeinterval").getOrElse(sys.error("Missing 'cron.timeinterval' configuration setting."))
     
 
   def cancelScheduledReport(jobId:String) = Action {
@@ -59,21 +60,22 @@ object Application extends Controller {
     } else Ok(Json.obj("status" -> "error", "description" -> "job not cancelled","reason" -> s"not a valid id: $jobId"))
   }
 
+
   def runningJobs = Action {
     val ids = scheduler.runningJobs.keys
     Ok(Json.obj("status" -> "success", "jobIds" -> Json.toJson(ids)))
   }
 
   def cronSchedule = Action(parse.json) { implicit request => 
-    val cronrequest: JsResult[CreateSchedule] = request.body.validate[CreateSchedule]
-    cronrequest.fold(
+    val createSchedule: JsResult[CreateSchedule] = request.body.validate[CreateSchedule]
+    createSchedule.fold(
       invalid = {
         fieldErrors => {
           Ok(Json.obj("status" -> "error","description" -> "no valid cronrequest received"))
         }
       },
       valid = { cr => 
-        val scheduleOpt = CronSchedule.nextCron(cr.scheme,cr.currentDates,millis)
+        val scheduleOpt = CronSchedule.nextCron(cr.scheme,cr.currentDates,jobIntervalInMillis)
         scheduleOpt match {
           case Some(cs) => Ok(Json.obj("status" -> "success", "cron" -> cs))
           case None => Ok(Json.obj("status" -> "error", "reason" -> "Couldn't create cron string"))
@@ -102,10 +104,12 @@ object Application extends Controller {
         println("runningJobs nextRuns " + currentDates)
         println("Scheme" + sr.scheme)
 
-        val cronOpt = CronSchedule.nextCron(sr.scheme,currentDates,millis)
+        val cronOpt = CronSchedule.nextCron(sr.scheme,currentDates,jobIntervalInMillis)
         val dateOpt = cronOpt map { (cron) => {
           val cronStr = CronSchedule.toQuartz(cron)
-          scheduler.createSchedule(uuid, Some(s"scheduled report"), cronStr, None)
+          println("cronStr : " + cronStr)
+          val firstRun = scheduler.createSchedule(uuid, Some(s"scheduled report"), cronStr, None)
+          println("firstRun : " + firstRun)
 
           val scheduledReport = ScheduledReport(sr.reportName,sr.url,cron)
           backupService.addScheduledReport(id, scheduledReport)

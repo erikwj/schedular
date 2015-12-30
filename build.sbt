@@ -11,14 +11,17 @@ version := "2.4.0"
 
 val akkaVersion = "2.4.0"
 
-val playVersion = "2.3.10"
+val playVersion = "2.4.0"
 
 scalaVersion := "2.11.7"
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases"
 
+resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+
 
 libraryDependencies ++= Seq(
+  specs2 % Test,
   "com.enragedginger" %% "akka-quartz-scheduler" % "1.4.0-akka-2.3.x",
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "org.slf4j" % "slf4j-api" % "1.7.12",

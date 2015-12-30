@@ -8,8 +8,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import models._
 
-import scheduler.QuartzScheduler._
-import CronSchedule._
+import quartzscheduler._
+import quartzscheduler.QuartzScheduler._
+import quartzscheduler.CronSchedule._
 
 
 /*
@@ -55,5 +56,5 @@ object JobId {
 }
 
 object Schedule {
-  val dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+  val dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 }
