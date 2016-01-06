@@ -106,15 +106,28 @@ object Application extends Controller {
 
         val cronOpt = CronSchedule.nextCron(sr.scheme,currentDates,jobIntervalInMillis)
         val dateOpt = cronOpt map { (cron) => {
-          val cronStr = CronSchedule.toQuartz(cron)
-          println("cronStr : " + cronStr)
-          val firstRun = scheduler.createSchedule(uuid, Some(s"scheduled report"), cronStr, None)
-          println("firstRun : " + firstRun)
+          if(inScope(cron,new java.util.Date())) {
 
-          val scheduledReport = ScheduledReport(sr.reportName,sr.url,cron)
-          backupService.addScheduledReport(id, scheduledReport)
-          val job = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
-          scheduler.schedule(uuid, job, Send)
+            val cronStr = CronSchedule.toQuartz(cron)
+            println("cronStr : " + cronStr)
+            val firstRun = scheduler.createSchedule(uuid, Some(s"scheduled report"), cronStr, None)
+            println("firstRun : " + firstRun)
+
+            val scheduledReport = ScheduledReport(sr.reportName,sr.url,cron)
+            backupService.addScheduledReport(id, scheduledReport)
+            val job = Akka.system.actorOf(Props(new ReportSender(sr.reportName,sr.url,sr.to,sr.body)), name="ReportSender-" + id)
+            scheduler.schedule(uuid, job, Send)
+          } else {
+            //put schedule in scope and postpone job to that date
+            //Use apitools to resend request at certain date. 
+            // Requests.sendRequest(request,request.body)
+
+            //create task to start a scheduled report
+
+            //stub to let the test pass by returning a Date. with current test setup this won't be executed
+            new java.util.Date()
+          }
+
           } 
         }
         

@@ -18,14 +18,11 @@ import org.joda.time._
 
 
 object QuartzScheduler {
-  
-  val scheduler = QuartzSchedulerExtension(Akka.system)
-   
+  val scheduler = QuartzSchedulerExtension(Akka.system)  
 }
 
 sealed trait CronSchedule {
   val startDate: Date
-
 }
 
 case class DAILY(startDate: Date) extends CronSchedule
@@ -105,7 +102,7 @@ object CronSchedule {
     val dweek = calendar.get(Calendar.DAY_OF_WEEK)
     val dmonth = calendar.get(Calendar.DAY_OF_MONTH)
     val month = calendar.get(Calendar.MONTH) 
-    val year = calendar.get(Calendar.YEAR) 
+    val year = calendar.get(Calendar.YEAR) - 1900
     val hours = calendar.get(Calendar.HOUR_OF_DAY) 
     val minutes = calendar.get(Calendar.MINUTE)
     val seconds = calendar.get(Calendar.SECOND)
@@ -121,14 +118,34 @@ object CronSchedule {
     
   }
 
+  def inScope(scheme:CronSchedule, start: Date):Boolean = {
+    val now = new DateTime(start)
+    scheme match {
+      case DAILY(d) => now.plusDays(1).isAfter(new DateTime(d))
+      case WEEKLY(d) => now.plusDays(7).isAfter(new DateTime(d))
+      case MONTHLY(d) => now.plusMonths(1).isAfter(new DateTime(d))
+      case YEARLY(d) => now.plusYears(1).isAfter(new DateTime(d))
+      case ONCE(d) => true
+    }    
+  }
+
+/*  def putInScope(scheme:CronSchedule, start: Date):Boolean = {
+    val now = new DateTime(start)
+    scheme match {
+      case DAILY(d) => now.plusDays(1).isAfter(new DateTime(d))
+      case WEEKLY(d) => now.plusDays(7).isAfter(new DateTime(d))
+      case MONTHLY(d) => now.plusMonths(1).isAfter(new DateTime(d))
+      case YEARLY(d) => now.plusYears(1).isAfter(new DateTime(d))
+      case ONCE(d) => true
+    }    
+  }*/
+
   def nextCron(scheme: CronSchedule, currentDates:List[Date], millis: Int): Option[CronSchedule] = {
     val updateScheme = (d:Date) => update(scheme,d)
     updateScheme(getStartDate(scheme.startDate,currentDates,millis))
   }
 
   def getStartDate(initialStartDate: Date, currentDates:List[Date], millis: Int): Date = {
-    // println("initialStartDate DATE " + initialStartDate)
-    // val utcDate: Date => Date = ???
     val next: Date => Date = (d:Date) => addMillis(d,millis)
     val sorted = currentDates.sortBy(_.getTime())
     val windows = sorted.sliding(2).toList

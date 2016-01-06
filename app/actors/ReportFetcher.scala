@@ -27,10 +27,6 @@ import java.io.FileOutputStream
 import ReportFetcher._
 import actors.ReportSender._
 
-import play.api.libs.mailer._
-
-
-
   object ReportFetcher {
 
     sealed trait ExcelReport 
@@ -78,8 +74,8 @@ import play.api.libs.mailer._
     }
 
     private implicit val dispatcher = context.dispatcher
-    private val host = Play.configuration.getString("kate.url").getOrElse(sys.error("Missing 'kate.url' configuration setting."))
-    private val endpoint = host + "/report/excel" 
+    // private val host = Play.configuration.getString("kate.url").getOrElse(sys.error("Missing 'kate.url' configuration setting."))
+    // private val endpoint = host + "/report/excel" 
     private val client = new NingWSClient(new Builder().build())
   }
 

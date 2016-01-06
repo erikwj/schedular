@@ -21,6 +21,7 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
 
 libraryDependencies ++= Seq(
+  ws,
   specs2 % Test,
   "com.enragedginger" %% "akka-quartz-scheduler" % "1.4.0-akka-2.3.x",
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
@@ -35,6 +36,7 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-email" % "1.4",
   "net.debasishg" %% "redisclient" % "3.1",
   "joda-time" % "joda-time" % "2.9.1",
+  "net.elogistics" %% "api-tools" % "2.0.2",
   "org.scalacheck" %% "scalacheck" % "1.12.5" % "test"
 )
 

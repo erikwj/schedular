@@ -28,11 +28,14 @@ import ReportSender._
 
 import play.api.libs.mailer._
 
-
-
+/*
+ * use apitools!
+ */
+ 
   object ReportSender {
     case object Send 
   }
+
 
   class ReportSender(reportName: String, target:String,receipients:Seq[String],body: String) extends Actor with ActorLogging {
   	 def uuid = java.util.UUID.randomUUID().toString()
